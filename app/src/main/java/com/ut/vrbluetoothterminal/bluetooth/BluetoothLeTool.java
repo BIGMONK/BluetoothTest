@@ -37,7 +37,7 @@ public class BluetoothLeTool {
     }
 
     public interface BluetoothLeStatusListener {
-//        void onConnected();
+        //        void onConnected();
 //        void onDisconnected();
         void onBlueToothConnectState(int state);
     }
@@ -72,14 +72,15 @@ public class BluetoothLeTool {
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            Log.i(TAG, "onConnectionStateChange newState=" + newState);
+            mBluetoothLeStatusListener.onBlueToothConnectState(newState);
+
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnectionState = STATE_CONNECTED;
-
                 if (mBluetoothLeStatusListener != null) {
 //                    mBluetoothLeStatusListener.onConnected();
-                    mBluetoothLeStatusListener.onBlueToothConnectState(STATE_CONNECTED);
-
+//                    mBluetoothLeStatusListener.onBlueToothConnectState(STATE_CONNECTED);
                 }
 
                 Log.i(TAG, "Connected to GATT server.");
@@ -93,16 +94,17 @@ public class BluetoothLeTool {
 
                 if (mBluetoothLeStatusListener != null) {
 //                    mBluetoothLeStatusListener.onDisconnected();
-                    mBluetoothLeStatusListener.onBlueToothConnectState(STATE_DISCONNECTED);
-
+//                    mBluetoothLeStatusListener.onBlueToothConnectState(STATE_DISCONNECTED);
                 }
             }
         }
+
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (mBluetoothLeDiscoveredListener != null) {
-                    mBluetoothLeDiscoveredListener.onDiscovered(getSupportedGattServices());
+//                    mBluetoothLeDiscoveredListener.onDiscovered(getSupportedGattServices());
+                    mBluetoothLeDiscoveredListener.onDiscovered(gatt.getServices());
                 }
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
@@ -118,38 +120,50 @@ public class BluetoothLeTool {
 //                    mBluetoothLeDataListener.onDataAvailable(characteristic.getValue());
 //                }
             }
-            byte[] bs=characteristic.getValue();
-            StringBuffer sb=new StringBuffer();
-            for (int i = 0; i <bs.length ; i++) {
-                sb.append(bs[i]+"\t");
+            byte[] bs = characteristic.getValue();
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < bs.length; i++) {
+                sb.append(bs[i] + "\t");
             }
-            Log.d(TAG,"onCharacteristicRead"+sb.toString());
+            Log.d(TAG, "onCharacteristicRead" + sb.toString());
 
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            byte[] bs=characteristic.getValue();
-            StringBuffer sb=new StringBuffer();
-            for (int i = 0; i <bs.length ; i++) {
-                sb.append(bs[i]+"\t");
+            byte[] bs = characteristic.getValue();
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < bs.length; i++) {
+                sb.append(bs[i] + "\t");
             }
-            Log.d(TAG,"onCharacteristicChanged"+sb.toString());
+            Log.d(TAG, "onCharacteristicChanged" + sb.toString()+characteristic.getUuid());
 
             broadcastUpdate(characteristic);
+
+//            //得到心率信息的service
+//            BluetoothGattService service = gatt
+//                    .getService(UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb"));
+//            if (service == null) {
+//                System.out.println("没有得到心率服务");
+//            } else {
+//                System.out.println("得到心率服务");
+//                BluetoothGattCharacteristic bluetoothGattCharacteristic
+//                        = service.getCharacteristic(UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb"));
+//            }
         }
 
         @Override
-        public void onCharacteristicWrite (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status){
-            byte[] bs=characteristic.getValue();
-            StringBuffer sb=new StringBuffer();
-            for (int i = 0; i <bs.length ; i++) {
-                sb.append(bs[i]+"\t");
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            byte[] bs = characteristic.getValue();
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < bs.length; i++) {
+                sb.append(bs[i] + "\t");
             }
-            Log.d(TAG,"onCharacteristicWrite"+sb.toString());
+            Log.d(TAG, "onCharacteristicWrite" + sb.toString());
 
         }
+
     };
 
     public void setBluetoothLeDataListener(BluetoothLeDataListener listener) {
@@ -170,7 +184,7 @@ public class BluetoothLeTool {
     }
 
     private void broadcastUpdate(BluetoothGattCharacteristic characteristic) {
-            if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
+        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
 //                int flag = characteristic.getProperties();
 //                int format = -1;
 //            if ((flag & 0x01) != 0) {
@@ -216,7 +230,7 @@ public class BluetoothLeTool {
     }
 
     public boolean connect(final String address) {
-        Log.i(TAG,"connect");
+        Log.i(TAG, "connect");
         if (mBluetoothAdapter == null || address == null) {
             Log.i(TAG, "BluetoothAdapter not initialized or unspecified address.");
             return false;
@@ -257,6 +271,7 @@ public class BluetoothLeTool {
         }
         mBluetoothGatt.disconnect();
     }
+
     public void close() {
         if (mBluetoothGatt == null) {
             return;
@@ -304,7 +319,6 @@ public class BluetoothLeTool {
         }
         return mBluetoothGatt.getServices();
     }
-
 
 
 }

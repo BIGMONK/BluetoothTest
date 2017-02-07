@@ -11,8 +11,6 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.ut.vrbluetoothterminal.utils.UIUtils;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -169,7 +167,6 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
             mBlueToothConnectStateListener.onBlueToothConnectState(-1);
             mDeviceMap.clear();
             mBluetoothAdapter.startLeScan(mLeScanCallback);
-            System.out.println("BlueToothLeManager scanLeDevice");
         } else {
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
         }
@@ -184,47 +181,37 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
                     final String deviceName = device.getName();
                     final String deviceAdd = device.getAddress();
                     if (mBluetoothTool.getmConnectionState() == 0) {
+//                        UIUtils.runInMainThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//
+//                            }
+//                        });
                         if (!mDeviceMap.containsKey(deviceAdd)) {
-
-                            UIUtils.runInMainThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (deviceName == null && deviceAdd == null) {
-                                        return;
-                                    }
-                                    if (!mDeviceMap.containsKey(deviceAdd)) {
-                                        mDeviceMap.put(deviceAdd, device);
-                                        Log.d(TAG, "runInMainThread device put=" + device.getAddress() + "   " + device.getName());
-                                        //优先根据MAC查找
-                                        if (!TextUtils.isEmpty(deviceAdd) && deviceAdd.equals(mDeviceAddress)) {
-                                            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                                            handler.removeCallbacks(mRunnable);
-                                            mBluetoothDevice = device;
-                                            mDeviceName = mBluetoothDevice.getName();
-//                                        mBluetoothDevice = mDeviceMap.get(deviceAdd);
-//                                        if (mBluetoothDevice != null) {
-                                            Log.d(TAG + "蓝牙设备findByAdd名称：", deviceName + "  " + deviceAdd);
-                                            connectDevice(deviceAdd);
-//                                        }
-                                        } else if (!TextUtils.isEmpty(deviceName) && deviceName.equals(mDeviceName)) {
-                                            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                                            handler.removeCallbacks(mRunnable);
-                                            mBluetoothDevice = device;
-                                            mDeviceAddress = device.getAddress();
-//                                        mBluetoothDevice = mDeviceMap.get(deviceAdd);
-//                                        if (mBluetoothDevice != null) {
-                                            Log.d(TAG + "蓝牙设备findByName名称：", deviceName + "  " + deviceAdd);
-                                            connectDevice(deviceAdd);
-//                                        }
-                                        }
-
-                                    }
-                                }
-                            });
+                            mDeviceMap.put(deviceAdd, device);
                         } else {
-                            connectDevice(mBluetoothDevice.getAddress());
-                            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                            handler.removeCallbacks(mRunnable);
+                            Log.d(TAG, "runInMainThread device put=" + device.getAddress() + "   " + device.getName());
+                            //优先根据MAC查找
+                            if (!TextUtils.isEmpty(deviceAdd) && deviceAdd.equals(mDeviceAddress)) {
+                                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                                handler.removeCallbacks(mRunnable);
+                                mBluetoothDevice = device;
+                                mDeviceName = mBluetoothDevice.getName();
+//                                        mBluetoothDevice = mDeviceMap.get(deviceAdd);
+//                                        if (mBluetoothDevice != null) {
+                                Log.d(TAG + "蓝牙设备findByAdd名称：", deviceName + "  " + deviceAdd);
+                                connectDevice(deviceAdd);
+//                                        }
+                            } else if (!TextUtils.isEmpty(deviceName) && deviceName.equals(mDeviceName)) {
+                                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                                handler.removeCallbacks(mRunnable);
+                                mBluetoothDevice = device;
+                                mDeviceAddress = device.getAddress();
+//                                        mBluetoothDevice = mDeviceMap.get(deviceAdd);
+//                                        if (mBluetoothDevice != null) {
+                                Log.d(TAG + "蓝牙设备findByName名称：", deviceName + "  " + deviceAdd);
+                                connectDevice(deviceAdd);//                                        }
+                            }
                         }
                     }
                 }

@@ -47,7 +47,6 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
         inputSystemManager.setBlueToothConnectStateEvevtListener(this);
         inputSystemManager.initWithContext(this,mDevicesAddress, mDevicesName);
 
-        mRandom = new Random();
     }
 
     int i = 0;
@@ -98,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
         mBlueToothConnectState = state;
         if (state == 0) {
             //如果断开就重连
-//            inputSystemManager.initWithContext(this, mDevicesName,mDevicesAddress);
             inputSystemManager.reConnectBlueTooth();
         }
 
