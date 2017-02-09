@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
     private int mBlueToothConnectState;
 
     private String mDevicesAddress="F4:5E:AB:AF:1D:BF";
+//    private String mDevicesAddress="E6:A3:04:CC:50:D5";
     private String mDevicesName="HMSoft";
 
 
@@ -57,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
             case R.id.connect:
                 Log.d(TAG,"onClick connect mBlueToothConnectState="+mBlueToothConnectState);
                 if (mBlueToothConnectState == 0)
-                    //依次根据地址和名称连接指定的蓝牙设备
+                    //依次根据地址或者名称连接指定的蓝牙设备
                     inputSystemManager.initWithContext(this,mDevicesAddress, mDevicesName);
                 break;
             case R.id.disconnect:
@@ -97,9 +98,8 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
         mBlueToothConnectState = state;
         if (state == 0) {
             //如果断开就重连
-            inputSystemManager.reConnectBlueTooth();
+            inputSystemManager.initWithContext(this,mDevicesAddress, mDevicesName);
+//            inputSystemManager.reConnectBlueTooth();
         }
-
-
     }
 }

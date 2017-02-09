@@ -95,25 +95,24 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
 
     public void initBlueToothInfo() {
         mBluetoothTool = new BluetoothLeTool();
-
         //打开蓝牙
-        blueToothInit();
-        //扫描蓝牙
-        mRunnable = new Runnable() {
-            @Override
-            public void run() {
-                // TODO Auto-generated method stub
-                if (mBluetoothTool.getmConnectionState() != 1 && mBluetoothTool.getmConnectionState() != 2) {
-                    //要做的事情
-                    handler.postDelayed(this, 20000);
-                    Log.d(TAG, "mBluetoothAdapter.isDiscovering()=" + mBluetoothAdapter.isDiscovering() + "  "
-                            + mBluetoothAdapter.getState());
-                    scanLeDevice(!mBluetoothAdapter.isDiscovering());
+        if (blueToothInit()) {
+            //扫描蓝牙
+            mRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    // TODO Auto-generated method stub
+                    if (mBluetoothTool.getmConnectionState() != 1 && mBluetoothTool.getmConnectionState() != 2) {
+                        //要做的事情
+                        handler.postDelayed(this, 20000);
+                        Log.d(TAG, "mBluetoothAdapter.isDiscovering()=" + mBluetoothAdapter.isDiscovering() + "  "
+                                + mBluetoothAdapter.getState());
+                        scanLeDevice(!mBluetoothAdapter.isDiscovering());
+                    }
                 }
-            }
-        };
-        handler.postDelayed(mRunnable, 0);
-
+            };
+            handler.postDelayed(mRunnable, 0);
+        }
     }
 
     public void unintBlueToothInfo() {
@@ -187,9 +186,10 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
 //
 //                            }
 //                        });
-                        if (!mDeviceMap.containsKey(deviceAdd)) {
-                            mDeviceMap.put(deviceAdd, device);
-                        } else {
+//                        if (!mDeviceMap.containsKey(deviceAdd)) {
+//                            mDeviceMap.put(deviceAdd, device);
+//                        } else
+                        {
                             Log.d(TAG, "runInMainThread device put=" + device.getAddress() + "   " + device.getName());
                             //优先根据MAC查找
                             if (!TextUtils.isEmpty(deviceAdd) && deviceAdd.equals(mDeviceAddress)) {
@@ -260,7 +260,7 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
             return false;
         }
 
-        if (mBluetoothTool != null&&mBluetoothDevice!=null) {
+        if (mBluetoothTool != null && mBluetoothDevice != null) {
             final boolean result = mBluetoothTool.connect(mBluetoothDevice.getAddress());
             Log.i(TAG, "Connect request result=" + result);
             return result;

@@ -52,6 +52,7 @@ public class InputSystemManager extends GestureDetector.SimpleOnGestureListener
         if (instance == null) {
             instance = new InputSystemManager();
         }
+
         return instance;
     }
 
