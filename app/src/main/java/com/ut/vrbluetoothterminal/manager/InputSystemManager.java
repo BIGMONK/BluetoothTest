@@ -200,10 +200,19 @@ public class InputSystemManager extends GestureDetector.SimpleOnGestureListener
         mBlueToothLeManager.reConnectDevice();
     }
 
+    public void sendData(byte[] data) {
+        if (mBlueToothLeManager != null) {
+            mBlueToothLeManager.sendData(data);
+        }
+    }
     public void sendData(String data) {
         if (mBlueToothLeManager != null) {
             mBlueToothLeManager.sendData(data);
         }
+    }
+
+    public void setCharacteristicNotification(){
+        mBlueToothLeManager.setCharacteristicNotification();
     }
 
     public void disconnectDevice() {

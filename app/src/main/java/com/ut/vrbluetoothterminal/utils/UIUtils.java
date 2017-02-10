@@ -140,4 +140,27 @@ public class UIUtils {
 		getHandler().removeCallbacks(runnableTask);
 	}
 
+	public static byte[] hexStringToByteArray(String s) {
+		if (s.length() % 2 != 0) {
+			StringBuilder stringBuilder = new StringBuilder(s);
+			stringBuilder.insert(s.length()-1,"0");
+			s = stringBuilder.toString();
+		}
+
+
+		int len = s.length();
+		byte[] data = new byte[len / 2];
+		for (int i = 0; i < len; i += 2) {
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+					+ Character.digit(s.charAt(i + 1), 16));
+		}
+		return data;
+	}
+
+
+	public static boolean isRightHexStr(String str){
+		String reg = "^[0-9a-fA-F]+$";
+		return str.matches(reg);
+	}
+
 }

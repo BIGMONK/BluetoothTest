@@ -6,20 +6,20 @@
     android:orientation="vertical"
     tools:context="com.ut.vrbluetoothterminal.MainActivity">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="这是一个串口终端"
-        android:textSize="25sp" />
+    <!--<TextView-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:gravity="center"-->
+    <!--android:text="这是一个串口终端"-->
+    <!--android:textSize="25sp" />-->
 
-    <TextView
-        android:id="@+id/tv_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="BTxx"
-        android:textSize="30sp" />
+    <!--<TextView-->
+    <!--android:id="@+id/tv_name"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:gravity="center"-->
+    <!--android:text="BTxx"-->
+    <!--android:textSize="30sp" />-->
 
     <TextView
         android:id="@+id/text_sent_data"
@@ -40,5 +40,39 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="连接" />
+
+    <Button
+        android:id="@+id/send0x01"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="发送字节：0x01" />
+
+    <Button
+        android:id="@+id/send0x02"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="发送字节：0x02" />
+
+    <Button
+        android:id="@+id/send0xFE"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="发送字节：0xFE" />
+
+    <Button
+        android:id="@+id/send0xFF"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="发送字节：0xFF" />
+    <Button
+        android:id="@+id/notify"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="notify" />
+
+    <EditText
+        android:id="@+id/edit_data"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
