@@ -3,9 +3,6 @@ package com.ut.vrbluetoothterminal.receiver;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
-
-import com.ut.vrbluetoothterminal.service.TService;
 
 /**
  * Description:
@@ -27,9 +24,9 @@ public class StartBroadcastReceiver extends BroadcastReceiver {
 //            context.startService(i);
 //        }
 
-        Intent service = new Intent(context,TService.class);
-        context.startService(service);
-        Log.d("TAG", "开机自动服务自动启动.....");
+//        Intent service = new Intent(context,TService.class);
+//        context.startService(service);
+//        Log.d("TAG", "开机自动服务自动启动.....");
 
     }
 }

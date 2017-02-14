@@ -78,11 +78,9 @@ public class InputSystemManager extends GestureDetector.SimpleOnGestureListener
 
     @Override
     public void onAngleChanged(float angle) {
-        Log.d("onAngleChanged2222222", "*****" + angle);
         if (mAngleSystemEventListeners != null) {
             for (AngleSystemEventListener listener : mAngleSystemEventListeners) {
                 listener.onAngleChanged(this, angle);
-                Log.d("onAngleChanged3333", "*****" + angle);
             }
         }
     }
@@ -205,20 +203,21 @@ public class InputSystemManager extends GestureDetector.SimpleOnGestureListener
             mBlueToothLeManager.sendData(data);
         }
     }
+
     public void sendData(String data) {
         if (mBlueToothLeManager != null) {
             mBlueToothLeManager.sendData(data);
         }
     }
 
-    public void setCharacteristicNotification(){
-        mBlueToothLeManager.setCharacteristicNotification();
+    public boolean setCharacteristicNotification() {
+        return mBlueToothLeManager.setCharacteristicNotification();
     }
 
     public void disconnectDevice() {
-        if (mBlueToothLeManager != null){
+        if (mBlueToothLeManager != null) {
             mBlueToothLeManager.disconnectDevice();
-            Log.d(TAG,"disconnectDevice");
+            Log.d(TAG, "disconnectDevice");
         }
     }
 

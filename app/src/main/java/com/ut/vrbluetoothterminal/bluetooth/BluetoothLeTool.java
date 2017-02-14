@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -80,10 +81,6 @@ public class BluetoothLeTool {
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 mConnectionState = STATE_CONNECTED;
-                if (mBluetoothLeStatusListener != null) {
-//                    mBluetoothLeStatusListener.onConnected();
-//                    mBluetoothLeStatusListener.onBlueToothConnectState(STATE_CONNECTED);
-                }
 
                 Log.i(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
@@ -93,11 +90,6 @@ public class BluetoothLeTool {
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 mConnectionState = STATE_DISCONNECTED;
                 Log.i(TAG, "Disconnected from GATT server.");
-
-                if (mBluetoothLeStatusListener != null) {
-//                    mBluetoothLeStatusListener.onDisconnected();
-//                    mBluetoothLeStatusListener.onBlueToothConnectState(STATE_DISCONNECTED);
-                }
             }
         }
 
@@ -106,7 +98,6 @@ public class BluetoothLeTool {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "onServicesDiscovered 发现服务" + gatt.getServices().size());
                 if (mBluetoothLeDiscoveredListener != null) {
-//                    mBluetoothLeDiscoveredListener.onDiscovered(getSupportedGattServices());
                     mBluetoothLeDiscoveredListener.onDiscovered(gatt.getServices());
                 }
             } else {
@@ -135,46 +126,53 @@ public class BluetoothLeTool {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            byte[] bs = characteristic.getValue();
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < bs.length; i++) {
-                sb.append(bs[i] + "\t");
-            }
-            Log.d(TAG, "onCharacteristicChanged" + sb.toString() + characteristic.getUuid());
-
-            broadcastUpdate(characteristic);
+//            byte[] bs = characteristic.getValue();
+//            StringBuffer sb = new StringBuffer();
+//            for (int i = 0; i < bs.length; i++) {
+//                sb.append(bs[i] + "\t");
+//            }
+//            Log.d(TAG, "onCharacteristicChanged" + sb.toString() +"  "+ characteristic.getUuid());
 
             //得到心率信息的service
-            BluetoothGattService service = gatt.getService(SampleGattAttributes.HAND_BAND_SERVICE_UUID);
-            if (service == null) {
-                Log.d(TAG, "onCharacteristicChanged  没有得到心率服务");
+//            BluetoothGattService service = gatt.getService(SampleGattAttributes.HAND_BAND_SERVICE_UUID);
+//            if (service == null) {
+//                Log.d(TAG, "onCharacteristicChanged  没有得到心率服务");
+//
+//            } else {
+//                Log.d(TAG, "onCharacteristicChanged  得到心率服务");
+//                BluetoothGattCharacteristic bluetoothGattCharacteristic
+//                        = service.getCharacteristic(UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb"));
+//            }
 
-            } else {
-                Log.d(TAG, "onCharacteristicChanged  得到心率服务");
-                BluetoothGattCharacteristic bluetoothGattCharacteristic
-                        = service.getCharacteristic(UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb"));
+            if (characteristic != null && characteristic.getUuid().equals(SampleGattAttributes.HAND_BAND_RECEIVE_UUID)) {
+                final byte[] data = characteristic.getValue();
+                if (mBluetoothLeDataListener != null) {
+                    mBluetoothLeDataListener.onDataAvailable(data);
+                }
             }
-            final byte[] data = characteristic.getValue();
-            if (mBluetoothLeDataListener != null) {
-                mBluetoothLeDataListener.onDataAvailable(data);
-            }
+//            broadcastUpdate(characteristic);
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            byte[] bs = characteristic.getValue();
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < bs.length; i++) {
-                sb.append(bs[i] + "\t");
-            }
+//            byte[] bs = characteristic.getValue();
+//            StringBuffer sb = new StringBuffer();
+//            for (int i = 0; i < bs.length; i++) {
+//                sb.append(bs[i] + "\t");
+//            }
             if (status == BluetoothGatt.GATT_SUCCESS) {
 
-                Log.d(TAG, "onCharacteristicWrite SUCCESS  :" + sb.toString());
-            }else {
-                Log.d(TAG, "onCharacteristicWrite ERR    :" + sb.toString());
+                Log.d(TAG, "onCharacteristicWrite SUCCESS  ");
+            } else {
+                Log.d(TAG, "onCharacteristicWrite ERR    ");
             }
         }
 
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorRead(gatt, descriptor, status);
+            Log.d(TAG, "onDescriptorRead :" + descriptor.getUuid());
+        }
     };
 
     public void setBluetoothLeDataListener(BluetoothLeDataListener listener) {
@@ -307,18 +305,37 @@ public class BluetoothLeTool {
         mBluetoothGatt.writeCharacteristic(characteristic);
     }
 
-    public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled) {
+    public boolean setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null || characteristic == null) {
             Log.w(TAG, "BluetoothAdapter not initialized");
-            return;
+            return false;
         }
-        mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+        if (!mBluetoothGatt.setCharacteristicNotification(characteristic, enabled)) {
+            Log.d(TAG, "setCharacteristicNotification  false");
+            return false;
+        }
 
-//        List<BluetoothGattDescriptor> descriptors=characteristic.getDescriptors();
-//        for (int i = 0; i <descriptors.size() ; i++) {
-//            Log.d(TAG,"setCharacteristicNotification getCharacteristic().getUuid()"+ descriptors.get(i).getCharacteristic().getUuid());
-//            Log.d(TAG,"setCharacteristicNotification getCharacteristic().getUuid()" + descriptors.get(i).getUuid());
-//        }
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
+
+        if (descriptor == null) {
+            Log.d(TAG, String.format("getDescriptor for notify null!"));
+            return false;
+        }
+
+        byte[] value = (enabled ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+
+        if (!descriptor.setValue(value)) {
+            Log.d(TAG, String.format("setValue for notify descriptor failed!"));
+            return false;
+        }
+
+        if (!mBluetoothGatt.writeDescriptor(descriptor)) {
+            Log.d(TAG, String.format("writeDescriptor for notify failed"));
+            return false;
+        }
+        return true;
+//        return mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+
 //        // This is specific to Heart Rate Measurement.
 //        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
 //            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(

@@ -45,25 +45,25 @@
         android:id="@+id/send0x01"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="发送字节：0x01" />
+        android:text="发送：1" />
 
     <Button
         android:id="@+id/send0x02"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="发送字节：0x02" />
+        android:text="发送：2" />
 
     <Button
         android:id="@+id/send0xFE"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="发送字节：0xFE" />
+        android:text="发送：A" />
 
     <Button
         android:id="@+id/send0xFF"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="发送字节：0xFF" />
+        android:text="发送：B" />
     <Button
         android:id="@+id/notify"
         android:layout_width="wrap_content"

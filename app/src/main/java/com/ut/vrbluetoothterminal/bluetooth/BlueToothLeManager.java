@@ -106,9 +106,7 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
                     // TODO Auto-generated method stub
                     if (mBluetoothTool.getmConnectionState() != 1 && mBluetoothTool.getmConnectionState() != 2) {
                         //要做的事情
-                        handler.postDelayed(this, 20000);
-                        Log.d(TAG, "mBluetoothAdapter.isDiscovering()=" + mBluetoothAdapter.isDiscovering() + "  "
-                                + mBluetoothAdapter.getState());
+
                         scanLeDevice(!mBluetoothAdapter.isDiscovering());
                     }
                 }
@@ -235,6 +233,11 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
         return null;
     }
 
+    /**
+     * 根据MAC连接蓝牙设备
+     * @param address
+     * @return
+     */
     public boolean connectDevice(String address) {
 
         if (!mBluetoothTool.initialize()) {
@@ -283,6 +286,7 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
         }
 
     }
+
     public void sendData(String value) {
         if (mBluetoothTool.getmConnectionState() == BluetoothLeTool.STATE_CONNECTED) {
             mSendBluetoothGattCharacteristic.setValue(value);
@@ -291,19 +295,13 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
 
     }
 
-    public void setCharacteristicNotification() {
-        mBluetoothTool.setCharacteristicNotification(mBluetoothGattCharacteristic, true);
+    public boolean setCharacteristicNotification() {
+        return mBluetoothTool.setCharacteristicNotification(mBluetoothGattCharacteristic, true);
+
+
     }
 
     public void onDataAvailable(byte[] value) {
-
-        Log.d(TAG, "getdata-------" + value.toString());
-
-        byte b = value[0];
-        Log.d(TAG, "getdata byte-------" + b);
-        if (mHeartBeatChangedListener != null) {
-            mHeartBeatChangedListener.onHeartBeatChanged(b);
-        }
 
 
 //        if (value[0] == 0x04 && value[7] == 0x05) {
@@ -324,8 +322,15 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
 //            return;
 //        }
 //
-//        if (System.currentTimeMillis() - mLastSendTimestamps > 50) {
-//
+        if (System.currentTimeMillis() - mLastSendTimestamps > 50) {
+
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < value.length; i++) {
+                sb.append(value[i] + "\t");
+            }
+            Log.d(TAG, "计步器数据onCharacteristicChanged:" + sb.toString());
+
+
 //            UserInputInfo userInputInfo = parseUserInputInfo(value);
 //
 //            if (userInputInfo == null) {
@@ -333,9 +338,13 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
 //            }
 //
 //            doMyWork(userInputInfo);
-//
-//            mLastSendTimestamps = System.currentTimeMillis();
-//        }
+            //圈数
+            mAngleChangedListener.onAngleChanged(value[1] + value[2] * 256);
+            //速度
+            mSpeedChangedListener.onSpeedChanged((short)(value[3] + value[4] * 256));
+
+            mLastSendTimestamps = System.currentTimeMillis();
+        }
     }
 
     private void doMyWork(UserInputInfo userInputInfo) {
@@ -396,16 +405,31 @@ public class BlueToothLeManager extends Thread implements BluetoothLeTool.Blueto
                     if (characteristic != null && characteristic.getUuid().equals(SampleGattAttributes.HAND_BAND_RECEIVE_UUID)) {
                         //接收数据的BGC
                         mBluetoothGattCharacteristic = characteristic;
-                        setCharacteristicNotification();
+
+                        //直接notify
+//                        boolean setNotify=setCharacteristicNotification();
+//                        Log.d(TAG, "******onDiscovered------" + characteristic.getUuid().toString()+"   setNotify="+setNotify);
                         mCharProp = characteristic.getProperties();
-                        Log.d(TAG, "******onDiscovered------" + characteristic.getUuid().toString());
                     } else if (characteristic != null && characteristic.getUuid().equals(SampleGattAttributes.HAND_BAND_SEND_UUID)) {
                         //发送数据的BGC
                         mSendBluetoothGattCharacteristic = characteristic;
                         Log.d(TAG, "******onDiscovered------" + characteristic.getUuid().toString());
                     }
                 }
+            } else if (uuid.toString().equals("0000ffe0-0000-1000-8000-00805f9b34fb")) {
+                BluetoothGattService mBluetoothGattService = mGattServices.get(i);
+                List<BluetoothGattCharacteristic> ListBlueChar = mBluetoothGattService.getCharacteristics();
+                for (BluetoothGattCharacteristic characteristic : ListBlueChar) {
+                    Log.d(TAG, "--------------" + characteristic.getProperties() + "");
+                    if (characteristic != null) {
+                        mBluetoothGattCharacteristic = characteristic;
+                        setCharacteristicNotification();
+                        mCharProp = characteristic.getProperties();
+                    }
+                }
             }
+
+
         }
     }
 

@@ -11,8 +11,9 @@ import com.ut.vrbluetoothterminal.manager.InputSystemManager;
 
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity implements InputSystemManager.HeartBeatSystemEventListener,
-        View.OnClickListener, InputSystemManager.BlueToothConnectStateEvevtListener {
+public class MainActivity extends AppCompatActivity implements
+        View.OnClickListener, InputSystemManager.BlueToothConnectStateEvevtListener,
+        InputSystemManager.AngleSystemEventListener, InputSystemManager.SpeedSystemEventListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -23,7 +24,7 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
     private Button connectButton;
     private int mBlueToothConnectState;
 
-//            private String mDevicesAddress="F4:5E:AB:AF:1D:BF";
+    //            private String mDevicesAddress="F4:5E:AB:AF:1D:BF";
 //    private String mDevicesName="HMSoft";
     private String mDevicesAddress = "FA:0A:50:A3:2D:1D";
     private String mDevicesName = "STEPER";
@@ -47,12 +48,14 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
         textViewSentData.setOnClickListener(this);
         disConnectButton.setOnClickListener(this);
         connectButton.setOnClickListener(this);
+
 //        Intent intent = new Intent(MainActivity.this, TService.class);
 //        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //        this.startService(intent);
 
         inputSystemManager = InputSystemManager.getInstance();
-        inputSystemManager.registerHeartBeatSystemEventListener(this);
+        inputSystemManager.registerAngleSystemEventListener(this);
+        inputSystemManager.registerSpeedSystemEventListener(this);
         //监听蓝牙连接状态
         inputSystemManager.setBlueToothConnectStateEvevtListener(this);
         inputSystemManager.initWithContext(this, mDevicesAddress, mDevicesName);
@@ -88,23 +91,28 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
                 }
                 break;
             case R.id.send0x01:
-//                inputSystemManager.sendData(UIUtils.hexStringToByteArray("01"));
-                inputSystemManager.sendData("0x01");
+                inputSystemManager.sendData("1");
+//                inputSystemManager.sendData(new byte[]{0x31});
+
                 break;
             case R.id.send0x02:
-                inputSystemManager.sendData("0x02");
+                inputSystemManager.sendData("2");
+//                inputSystemManager.sendData(new byte[]{0x32});
                 break;
             case R.id.send0xFE:
-                inputSystemManager.sendData("0xFE");
+                inputSystemManager.sendData("A");
+//                inputSystemManager.sendData(new byte[]{0x41});
+//                inputSystemManager.sendData(new byte[]{(byte) 254});
                 break;
             case R.id.send0xFF:
-                inputSystemManager.sendData("0xFF");
+                inputSystemManager.sendData("B");
+//                inputSystemManager.sendData(new byte[]{0x42});
                 break;
             case R.id.notify:
-                inputSystemManager.setCharacteristicNotification();
+                if (inputSystemManager.setCharacteristicNotification()) {
+                    Log.d(TAG, "setCharacteristicNotification true");
+                }
                 break;
-
-
         }
 
     }
@@ -113,13 +121,9 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
     protected void onDestroy() {
 //        Intent sevice = new Intent(this, TService.class);
 //        this.startService(sevice);
-        inputSystemManager.unregisterHeartBeatSystemEventListener(this);
+        inputSystemManager.unregisterAngleSystemEventListener(this);
+        inputSystemManager.unregisterSpeedSystemEventListener(this);
         super.onDestroy();
-    }
-
-    @Override
-    public void onHeartBeatChanged(InputSystemManager inputSystemManager, int heartBeat) {
-        Log.d(TAG, "onHeartBeatChanged=" + heartBeat + "");
     }
 
 
@@ -148,5 +152,16 @@ public class MainActivity extends AppCompatActivity implements InputSystemManage
         send0xFE.setOnClickListener(this);
         send0xFF.setOnClickListener(this);
         notify.setOnClickListener(this);
+    }
+
+    @Override
+    public void onAngleChanged(InputSystemManager inputSystemManager, float angle) {
+        Log.d(TAG, "计步器数据onAngleChanged 圈数=" + angle + "");
+    }
+
+    @Override
+    public void onSpeedChanged(InputSystemManager inputSystemManager, short speed) {
+        Log.d(TAG, "计步器数据onSpeedChanged 速度=" + speed + "");
+
     }
 }
