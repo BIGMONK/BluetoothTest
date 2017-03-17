@@ -1,167 +1,167 @@
 package com.ut.vrbluetoothterminal;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 
+import com.ut.vrbluetoothterminal.bluetooth.BleDeviceAdapter;
+import com.ut.vrbluetoothterminal.bluetooth.BleDeviceBean;
 import com.ut.vrbluetoothterminal.manager.InputSystemManager;
 
-import java.util.Random;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.HAND_BAND_RECEIVE_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.HAND_BAND_SEND_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.HAND_BAND_SERVICE_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.HRM_RECEIVE_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.HRM_SEND_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.HRM_SERVICE_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.MAINBOARD_RECEIVE_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.MAINBOARD_SEND_UUID;
+import static com.ut.vrbluetoothterminal.bluetooth.SampleGattAttributes.MAINBOARD_SERVICE_UUID;
 
 public class MainActivity extends AppCompatActivity implements
         View.OnClickListener, InputSystemManager.BlueToothConnectStateEvevtListener,
-        InputSystemManager.AngleSystemEventListener, InputSystemManager.SpeedSystemEventListener {
+        InputSystemManager.BlueToothDataValuesChangedListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-
     private InputSystemManager inputSystemManager;
-    private TextView textViewSentData;
-    private Random mRandom;
-    private Button disConnectButton;
-    private Button connectButton;
-    private int mBlueToothConnectState;
-
-    //            private String mDevicesAddress="F4:5E:AB:AF:1D:BF";
-//    private String mDevicesName="HMSoft";
-    private String mDevicesAddress = "FA:0A:50:A3:2D:1D";
-    private String mDevicesName = "STEPER";
-
-    private Button send0x01;
-    private Button send0x02;
-    private Button send0xFE;
-    private Button send0xFF;
-    private Button notify;
+    private HashMap<String, BleDeviceBean> devicesMap = new HashMap<>();
+    private RecyclerView devicesRecyclerView;
+    private BleDeviceAdapter adapter;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+//1  手环   2  主控板   3 计步器   4  三角心率计
+        BleDeviceBean ble = new BleDeviceBean("手环", "D3:CB:8F:A3:20:BA", 1,
+                HAND_BAND_SERVICE_UUID, HAND_BAND_RECEIVE_UUID, HAND_BAND_SEND_UUID, CLIENT_CHARACTERISTIC_CONFIG);
+        BleDeviceBean ble2 = new BleDeviceBean("三角心率计", "98:7B:F3:C4:D5:7E", 4,
+                HRM_SERVICE_UUID, HRM_RECEIVE_UUID, HRM_SEND_UUID, CLIENT_CHARACTERISTIC_CONFIG);
+        BleDeviceBean ble3 = new BleDeviceBean("主控板", "D8:B0:4C:B6:4E:D6", 2,
+                MAINBOARD_SERVICE_UUID, MAINBOARD_RECEIVE_UUID, MAINBOARD_SEND_UUID, CLIENT_CHARACTERISTIC_CONFIG);
+        devicesMap.put("D3:CB:8F:A3:20:BA", ble);
+        devicesMap.put("98:7B:F3:C4:D5:7E", ble2);
+//        devicesMap.put("D8:B0:4C:B6:4E:D6", ble3);
+
         initView();
 
-        textViewSentData = (TextView) findViewById(R.id.text_sent_data);
-        disConnectButton = (Button) findViewById(R.id.disconnect);
-        connectButton = (Button) findViewById(R.id.connect);
-        textViewSentData.setOnClickListener(this);
-        disConnectButton.setOnClickListener(this);
-        connectButton.setOnClickListener(this);
-
-//        Intent intent = new Intent(MainActivity.this, TService.class);
-//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//        this.startService(intent);
-
         inputSystemManager = InputSystemManager.getInstance();
-        inputSystemManager.registerAngleSystemEventListener(this);
-        inputSystemManager.registerSpeedSystemEventListener(this);
+        inputSystemManager.setBlueToothDataValuesChangedListener(this);
         //监听蓝牙连接状态
         inputSystemManager.setBlueToothConnectStateEvevtListener(this);
-        inputSystemManager.initWithContext(this, mDevicesAddress, mDevicesName);
+        inputSystemManager.initWithContext(this, devicesMap);
+
 
     }
 
-    int i = 0;
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.connect:
-                Log.d(TAG, "onClick connect mBlueToothConnectState=" + mBlueToothConnectState);
-                if (mBlueToothConnectState == 0)
-                    //依次根据地址或者名称连接指定的蓝牙设备
-                    inputSystemManager.initWithContext(this, mDevicesAddress, mDevicesName);
-                break;
-            case R.id.disconnect:
-                Log.d(TAG, "onClick disconnect mBlueToothConnectState=" + mBlueToothConnectState);
-                if (mBlueToothConnectState == 2)
-                    inputSystemManager.disconnectDevice();
-                break;
-            case R.id.text_sent_data:
-                if (mBlueToothConnectState == 2) {
-                    i++;
-                    byte[] bytes = ("" + i).getBytes();
-                    inputSystemManager.sendData(bytes);
-                    StringBuffer byteString = new StringBuffer();
-                    for (int j = 0; j < bytes.length; j++) {
-                        byteString.append(bytes[i] + "  ");
-                    }
-                    textViewSentData.setText(byteString.toString());
-                }
-                break;
-            case R.id.send0x01:
-                inputSystemManager.sendData("1");
-//                inputSystemManager.sendData(new byte[]{0x31});
-
-                break;
-            case R.id.send0x02:
-                inputSystemManager.sendData("2");
-//                inputSystemManager.sendData(new byte[]{0x32});
-                break;
-            case R.id.send0xFE:
-                inputSystemManager.sendData("A");
-//                inputSystemManager.sendData(new byte[]{0x41});
-//                inputSystemManager.sendData(new byte[]{(byte) 254});
-                break;
-            case R.id.send0xFF:
-                inputSystemManager.sendData("B");
-//                inputSystemManager.sendData(new byte[]{0x42});
-                break;
-            case R.id.notify:
-                if (inputSystemManager.setCharacteristicNotification()) {
-                    Log.d(TAG, "setCharacteristicNotification true");
-                }
-                break;
-        }
-
     }
 
     @Override
     protected void onDestroy() {
-//        Intent sevice = new Intent(this, TService.class);
-//        this.startService(sevice);
-        inputSystemManager.unregisterAngleSystemEventListener(this);
-        inputSystemManager.unregisterSpeedSystemEventListener(this);
+        Log.d(TAG, "onDestroy");
         super.onDestroy();
     }
 
 
-    @Override
-    public void onBlueToothConnectStateChanged(int state) {
-        //TODO 加个广播？
-        //0 断开  1 正在连接 2 已经连接 -1正在扫描
-        Log.d(TAG, "onBlueToothConnectStateChanged=" + state);
-        mBlueToothConnectState = state;
-//        if (state == 0) {
-//            //如果断开就重连
-//            inputSystemManager.initWithContext(this,mDevicesAddress, mDevicesName);
-////            inputSystemManager.reConnectBlueTooth();
-//        }
+    /**
+     * 创建文件
+     *
+     * @param filepath 文件
+     * @return 是否创建成功，成功则返回true
+     */
+    public static boolean createFile(Context context, String filepath) {
+        Boolean bool = false;
+
+        File file = new File(filepath);
+        try {
+            //如果文件不存在，则创建新的文件
+            if (!file.exists()) {
+                file.createNewFile();
+                bool = true;
+                System.out.println("success create file,the file is " + file.getAbsolutePath());
+                //创建文件成功后，写入内容到文件里
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return bool;
     }
+
+    /**
+     * B方法追加文件：使用FileWriter
+     */
+    public static void appendMethodB(Context context, String fileName, String content) {
+        try {
+            //打开一个写文件器，构造函数中的第二个参数true表示以追加形式写文件
+            if (!new File(fileName).exists()) {
+                createFile(context, fileName);
+            }
+            FileWriter writer = new FileWriter(fileName, true);
+            writer.write(content);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onBlueToothConnectStateChanged(String add, int state) {
+        Log.d(TAG, add + "   状态     " + state);
+        devicesMap.get(add).setState(state);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                adapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    @Override
+    public void onBlueToothDataValuesChanged(String add, byte[] values) {
+        StringBuilder sb = new StringBuilder();
+        for (int j = 0; j < values.length; j++) {
+            sb.append(values[j] + "    ");
+        }
+        Log.d(TAG, add + "    数据     " + sb.toString());
+
+        devicesMap.get(add).setValues(values);
+
+        if (devicesMap.get(add).getType() == 1 && values[6] == 3) {
+            inputSystemManager.sendData(add, new byte[]{(byte) -85, (byte) 0, (byte) 4, (byte) -1, (byte) 49, (byte) 0x0a, (byte) 1});
+        }
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                adapter.notifyDataSetChanged();
+            }
+        });
+    }
+
 
     private void initView() {
-        send0x01 = (Button) findViewById(R.id.send0x01);
-        send0x02 = (Button) findViewById(R.id.send0x02);
-        send0xFE = (Button) findViewById(R.id.send0xFE);
-        send0xFF = (Button) findViewById(R.id.send0xFF);
-        notify = (Button) findViewById(R.id.notify);
 
-        send0x01.setOnClickListener(this);
-        send0x02.setOnClickListener(this);
-        send0xFE.setOnClickListener(this);
-        send0xFF.setOnClickListener(this);
-        notify.setOnClickListener(this);
-    }
-
-    @Override
-    public void onAngleChanged(InputSystemManager inputSystemManager, float angle) {
-        Log.d(TAG, "计步器数据onAngleChanged 圈数=" + angle + "");
-    }
-
-    @Override
-    public void onSpeedChanged(InputSystemManager inputSystemManager, short speed) {
-        Log.d(TAG, "计步器数据onSpeedChanged 速度=" + speed + "");
-
+        devicesRecyclerView = (RecyclerView) findViewById(R.id.devicesList);
+        adapter = new BleDeviceAdapter(this, devicesMap);
+        //设置布局管理器
+        devicesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        //设置Adapter
+        devicesRecyclerView.setAdapter(adapter);
     }
 }

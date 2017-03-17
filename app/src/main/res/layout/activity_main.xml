@@ -6,73 +6,10 @@
     android:orientation="vertical"
     tools:context="com.ut.vrbluetoothterminal.MainActivity">
 
-    <!--<TextView-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:gravity="center"-->
-    <!--android:text="这是一个串口终端"-->
-    <!--android:textSize="25sp" />-->
-
-    <!--<TextView-->
-    <!--android:id="@+id/tv_name"-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="wrap_content"-->
-    <!--android:gravity="center"-->
-    <!--android:text="BTxx"-->
-    <!--android:textSize="30sp" />-->
-
-    <TextView
-        android:id="@+id/text_sent_data"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/devicesList"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:text="发送的数据"
-        android:textSize="30sp" />
-
-    <Button
-        android:id="@+id/disconnect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="断开" />
-
-    <Button
-        android:id="@+id/connect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="连接" />
-
-    <Button
-        android:id="@+id/send0x01"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="发送：1" />
-
-    <Button
-        android:id="@+id/send0x02"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="发送：2" />
-
-    <Button
-        android:id="@+id/send0xFE"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="发送：A" />
-
-    <Button
-        android:id="@+id/send0xFF"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="发送：B" />
-    <Button
-        android:id="@+id/notify"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="notify" />
-
-    <EditText
-        android:id="@+id/edit_data"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent">
+    </android.support.v7.widget.RecyclerView>
 
 </LinearLayout>

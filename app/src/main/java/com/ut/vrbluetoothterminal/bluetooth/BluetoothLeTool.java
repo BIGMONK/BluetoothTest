@@ -7,17 +7,15 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
 import com.ut.vrbluetoothterminal.utils.UIUtils;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -28,77 +26,87 @@ public class BluetoothLeTool {
     private final static String TAG = BluetoothLeTool.class.getSimpleName();
 
     public interface BluetoothLeDataListener {
-        void onDataAvailable(byte[] value);
+        void onDataAvailable(String add,byte[] value);
     }
 
     public interface BluetoothLeDiscoveredListener {
-        void onDiscovered(List<BluetoothGattService> supportedService);
+        void onDiscovered(BluetoothGatt gatt);
     }
 
     public interface BluetoothLeStatusListener {
-        //        void onConnected();
-//        void onDisconnected();
-        void onBlueToothConnectState(int state);
+        void onBlueToothConnectState(String add,int state);
     }
 
-    private Context mContext = null;
+    public BluetoothLeTool(Map<String, BleDeviceBean> mDeviceMap) {
+        mBluetoothDeviceAddressMap = new HashMap<>();
+        mBluetoothGattMap = new HashMap<>();
+        mConnectionStateMap = new HashMap<>();
+        for (String address : mDeviceMap.keySet()) {
+            mConnectionStateMap.put(address, BluetoothStatus.STATE_DISCONNECTED);
+        }
+    }
 
     private BluetoothLeDataListener mBluetoothLeDataListener;
     private BluetoothLeDiscoveredListener mBluetoothLeDiscoveredListener;
     private BluetoothLeStatusListener mBluetoothLeStatusListener;
-
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
-    private String mBluetoothDeviceAddress;
-    private BluetoothGatt mBluetoothGatt;
+    private HashMap<String, BluetoothGatt> mBluetoothDeviceAddressMap;
+    private HashMap<String, BluetoothGatt> mBluetoothGattMap;
+    private HashMap<String, Integer> mConnectionStateMap;
 
-    public int getmConnectionState() {
-        return mConnectionState;
+    public HashMap<String, Integer> getAllConnectionStateMap() {
+        return mConnectionStateMap;
     }
 
-    public void setmConnectionState(int mConnectionState) {
-        this.mConnectionState = mConnectionState;
+    public int getAllConnectionState(){
+        for (String add:mConnectionStateMap.keySet()             ) {
+            if (mConnectionStateMap.get(add)==0){}
+        }
+
+        return 0;
     }
 
-    private int mConnectionState = STATE_DISCONNECTED;
+    public void setmConnectionState(String add, int mConnectionState) {
+        this.mConnectionStateMap.put(add, mConnectionState);
+    }
 
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_CONNECTING = 1;
     public static final int STATE_CONNECTED = 2;
     public static final int STATE_SCANING = -1;
+    public static final int STATE_SCAN_TIMEOUT = -2;
 
-    public final static UUID UUID_HEART_RATE_MEASUREMENT = UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
-
+    private long mLastSendTimestamps;
     /**
      * 监听蓝牙连接状态和数据
      */
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            Log.i(TAG, "onConnectionStateChange newState=" + newState);
-            mBluetoothLeStatusListener.onBlueToothConnectState(newState);
+            String add = gatt.getDevice().getAddress();
+            Log.i(TAG, "BluetoothGattCallback onConnectionStateChange add=" + add + "  state=" + newState);
+            setmConnectionState(add, newState);
+            mBluetoothLeStatusListener.onBlueToothConnectState(add,newState);
 
-            String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                mConnectionState = STATE_CONNECTED;
-
                 Log.i(TAG, "Connected to GATT server.");
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" +
-                        mBluetoothGatt.discoverServices());
-
+                        mBluetoothGattMap.get(add).discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                mConnectionState = STATE_DISCONNECTED;
                 Log.i(TAG, "Disconnected from GATT server.");
             }
+
         }
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            Log.d(TAG, "onServicesDiscovered");
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "onServicesDiscovered 发现服务" + gatt.getServices().size());
                 if (mBluetoothLeDiscoveredListener != null) {
-                    mBluetoothLeDiscoveredListener.onDiscovered(gatt.getServices());
+                    mBluetoothLeDiscoveredListener.onDiscovered(gatt);
                 }
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
@@ -126,43 +134,21 @@ public class BluetoothLeTool {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-//            byte[] bs = characteristic.getValue();
-//            StringBuffer sb = new StringBuffer();
-//            for (int i = 0; i < bs.length; i++) {
-//                sb.append(bs[i] + "\t");
-//            }
-//            Log.d(TAG, "onCharacteristicChanged" + sb.toString() +"  "+ characteristic.getUuid());
 
-            //得到心率信息的service
-//            BluetoothGattService service = gatt.getService(SampleGattAttributes.HAND_BAND_SERVICE_UUID);
-//            if (service == null) {
-//                Log.d(TAG, "onCharacteristicChanged  没有得到心率服务");
-//
-//            } else {
-//                Log.d(TAG, "onCharacteristicChanged  得到心率服务");
-//                BluetoothGattCharacteristic bluetoothGattCharacteristic
-//                        = service.getCharacteristic(UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb"));
-//            }
 
-            if (characteristic != null && characteristic.getUuid().equals(SampleGattAttributes.HAND_BAND_RECEIVE_UUID)) {
-                final byte[] data = characteristic.getValue();
-                if (mBluetoothLeDataListener != null) {
-                    mBluetoothLeDataListener.onDataAvailable(data);
-                }
+            final byte[] data = characteristic.getValue();
+            if (mBluetoothLeDataListener != null) {
+                mBluetoothLeDataListener.onDataAvailable(gatt.getDevice().getAddress(),data);
             }
-//            broadcastUpdate(characteristic);
+
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-//            byte[] bs = characteristic.getValue();
-//            StringBuffer sb = new StringBuffer();
-//            for (int i = 0; i < bs.length; i++) {
-//                sb.append(bs[i] + "\t");
-//            }
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
 
-                Log.d(TAG, "onCharacteristicWrite SUCCESS  ");
+                Log.d(TAG,gatt.getDevice().getAddress()+ "onCharacteristicWrite SUCCESS  ");
             } else {
                 Log.d(TAG, "onCharacteristicWrite ERR    ");
             }
@@ -185,36 +171,6 @@ public class BluetoothLeTool {
 
     public void setBluetoothLeStatusListener(BluetoothLeStatusListener listener) {
         mBluetoothLeStatusListener = listener;
-    }
-
-    private void broadcastUpdate(String action) {
-        Intent intent = new Intent(action);
-        UIUtils.getContext().sendBroadcast(intent);
-    }
-
-    private void broadcastUpdate(BluetoothGattCharacteristic characteristic) {
-//        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-//                int flag = characteristic.getProperties();
-//                int format = -1;
-//            if ((flag & 0x01) != 0) {
-//                format = BluetoothGattCharacteristic.FORMAT_UINT16;
-//                Log.d(TAG, "Heart rate format UINT16.");
-//            } else {
-//                format = BluetoothGattCharacteristic.FORMAT_UINT8;
-//                Log.d(TAG, "Heart rate format UINT8.");
-//            }
-//            final int heartRate = characteristic.getIntValue(format, 1);
-//            Log.d(TAG, String.format("Received heart rate: %d", heartRate));
-//            intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
-//            Log.d(TAG, "data is 1 : " + heartRate);
-//        } else {
-        // For all other profiles, writes the data formatted in HEX.
-        final byte[] data = characteristic.getValue();
-        if (mBluetoothLeDataListener != null) {
-            mBluetoothLeDataListener.onDataAvailable(data);
-        }
-//        }
-
     }
 
 
@@ -246,112 +202,89 @@ public class BluetoothLeTool {
         }
 
         // Previously connected device.  Try to reconnect.
-        if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
-                && mBluetoothGatt != null) {
-            Log.i(TAG, "Trying to use an existing mBluetoothGatt for connection.");
-            if (mBluetoothGatt.connect()) {
-                mConnectionState = STATE_CONNECTING;
-                mBluetoothLeStatusListener.onBlueToothConnectState(STATE_CONNECTING);
+        if (mBluetoothDeviceAddressMap.containsKey(address) && mBluetoothGattMap.containsKey(address)) {
+            Log.i(TAG, "Trying to use an existing mBluetoothGatt for connection.  "+address);
+            if (mBluetoothGattMap.get(address).connect()) {
+                mConnectionStateMap.put(address, STATE_CONNECTING);
+                mBluetoothLeStatusListener.onBlueToothConnectState(address,STATE_CONNECTING);
                 return true;
             } else {
                 return false;
             }
         }
-
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         if (device == null) {
             Log.w(TAG, "Device not found.  Unable to connect.");
             return false;
         }
-
-        mBluetoothGatt = device.connectGatt(UIUtils.getContext(), false, mGattCallback);
-
+        mBluetoothGattMap.put(address, device.connectGatt(UIUtils.getContext(), false, mGattCallback));
         Log.d(TAG, "Trying to create a new connection.");
-        mBluetoothDeviceAddress = address;
-        mConnectionState = STATE_CONNECTING;
-        mBluetoothLeStatusListener.onBlueToothConnectState(STATE_CONNECTING);
+        mBluetoothLeStatusListener.onBlueToothConnectState(address,STATE_CONNECTING);
         return true;
     }
 
-    public void disconnect() {
-        if (mBluetoothAdapter == null || mBluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized");
+    public void disconnect(String add) {
+        if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null) {
+            Log.w(TAG, "BluetoothAdapter not initialized   "+add);
             return;
         }
-        mBluetoothGatt.disconnect();
+        mBluetoothGattMap.get(add).disconnect();
     }
 
     public void close() {
-        if (mBluetoothGatt == null) {
-            return;
+        for (String add : mBluetoothGattMap.keySet()) {
+            if (mBluetoothGattMap.get(add) != null) {
+                mBluetoothGattMap.get(add).close();
+            }
         }
-        mBluetoothGatt.close();
-        mBluetoothGatt = null;
+        mBluetoothGattMap.clear();
+
     }
 
-    public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
-        if (mBluetoothAdapter == null || mBluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized");
+    public void readCharacteristic(String add, BluetoothGattCharacteristic characteristic) {
+        if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null) {
+            Log.w(TAG, "BluetoothAdapter not initialized  "+add);
             return;
         }
-        mBluetoothGatt.readCharacteristic(characteristic);
+        mBluetoothGattMap.get(add).readCharacteristic(characteristic);
     }
 
-    public void writeCharacteristic(BluetoothGattCharacteristic characteristic) {
-        if (mBluetoothAdapter == null || mBluetoothGatt == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized");
+    public void writeCharacteristic(String add, BluetoothGattCharacteristic characteristic) {
+        if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null) {
+            Log.w(TAG, "BluetoothAdapter not initialized  " +add);
             return;
         }
-        mBluetoothGatt.writeCharacteristic(characteristic);
+        mBluetoothGattMap.get(add).writeCharacteristic(characteristic);
     }
 
-    public boolean setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled) {
-        if (mBluetoothAdapter == null || mBluetoothGatt == null || characteristic == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized");
+    public boolean setCharacteristicNotification(String add, BluetoothGattCharacteristic characteristic, boolean enabled) {
+        if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null || characteristic == null) {
+            Log.w(TAG, "BluetoothAdapter not initialized  "+add);
             return false;
         }
-        if (!mBluetoothGatt.setCharacteristicNotification(characteristic, enabled)) {
-            Log.d(TAG, "setCharacteristicNotification  false");
+        if (!mBluetoothGattMap.get(add).setCharacteristicNotification(characteristic, enabled)) {
+            Log.d(TAG, "setCharacteristicNotification  false  "+add);
             return false;
         }
 
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor((SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
 
         if (descriptor == null) {
-            Log.d(TAG, String.format("getDescriptor for notify null!"));
+            Log.d(TAG, String.format("getDescriptor for notify null! "+add));
             return false;
         }
 
         byte[] value = (enabled ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
 
         if (!descriptor.setValue(value)) {
-            Log.d(TAG, String.format("setValue for notify descriptor failed!"));
+            Log.d(TAG, String.format("setValue for notify descriptor failed! "+add));
             return false;
         }
 
-        if (!mBluetoothGatt.writeDescriptor(descriptor)) {
-            Log.d(TAG, String.format("writeDescriptor for notify failed"));
+        if (!mBluetoothGattMap.get(add).writeDescriptor(descriptor)) {
+            Log.d(TAG, String.format("writeDescriptor for notify failed "+add));
             return false;
         }
         return true;
-//        return mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
-
-//        // This is specific to Heart Rate Measurement.
-//        if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
-//            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
-//                    UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
-//            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-////            Write the value of a given descriptor to the associated remote device.
-//            mBluetoothGatt.writeDescriptor(descriptor);
-//        }
     }
-
-    public List<BluetoothGattService> getSupportedGattServices() {
-        if (mBluetoothGatt == null) {
-            return null;
-        }
-        return mBluetoothGatt.getServices();
-    }
-
-
 }
