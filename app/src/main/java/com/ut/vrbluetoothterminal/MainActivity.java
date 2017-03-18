@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//1  手环   2  主控板   3 计步器   4  三角心率计
+        //1  手环   2  主控板   3 计步器   4  三角心率计
         BleDeviceBean ble = new BleDeviceBean("手环", "D3:CB:8F:A3:20:BA", 1,
                 HAND_BAND_SERVICE_UUID, HAND_BAND_RECEIVE_UUID, HAND_BAND_SEND_UUID, CLIENT_CHARACTERISTIC_CONFIG);
         BleDeviceBean ble2 = new BleDeviceBean("三角心率计", "98:7B:F3:C4:D5:7E", 4,
@@ -58,11 +58,11 @@ public class MainActivity extends AppCompatActivity implements
         initView();
 
         inputSystemManager = InputSystemManager.getInstance();
-        inputSystemManager.setBlueToothDataValuesChangedListener(this);
+//        inputSystemManager.setBlueToothDataValuesChangedListener(this);
+        inputSystemManager.registerBlueToothDataValuesChangedListener(this);
         //监听蓝牙连接状态
         inputSystemManager.setBlueToothConnectStateEvevtListener(this);
         inputSystemManager.initWithContext(this, devicesMap);
-
 
     }
 
@@ -73,8 +73,9 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG, "onDestroy");
+        inputSystemManager.unRegisterBlueToothDataValuesChangedListener(this);
         super.onDestroy();
+        Log.d(TAG, "onDestroy");
     }
 
 
@@ -164,4 +165,6 @@ public class MainActivity extends AppCompatActivity implements
         //设置Adapter
         devicesRecyclerView.setAdapter(adapter);
     }
+
+
 }

@@ -8,6 +8,8 @@ import com.ut.vrbluetoothterminal.bluetooth.BleDeviceBean;
 import com.ut.vrbluetoothterminal.bluetooth.BlueToothLeManager;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by liuenbao on 1/23/16.
@@ -31,11 +33,13 @@ public class InputSystemManager extends GestureDetector.SimpleOnGestureListener
 
     private WifiStateManager mWifiStateManager;
     private BlueToothLeManager mBlueToothLeManager;
+    private List<BlueToothDataValuesChangedListener>  mBlueToothDataValuesChangedListeners;
 
     //An array of observers
 
 
     private InputSystemManager() {
+        mBlueToothDataValuesChangedListeners= new LinkedList<>();
     }
 
     public static InputSystemManager getInstance() {
@@ -61,7 +65,12 @@ public class InputSystemManager extends GestureDetector.SimpleOnGestureListener
 
     @Override
     public void onDataValuesChanged(String add, byte[] values) {
-        mBlueToothDataValuesChangedListener.onBlueToothDataValuesChanged(add,values);
+//        mBlueToothDataValuesChangedListener.onBlueToothDataValuesChanged(add,values);
+        if (mBlueToothDataValuesChangedListeners != null) {
+            for (BlueToothDataValuesChangedListener listener : mBlueToothDataValuesChangedListeners) {
+                listener.onBlueToothDataValuesChanged(add,values);
+            }
+        }
     }
 
 
@@ -79,8 +88,14 @@ public class InputSystemManager extends GestureDetector.SimpleOnGestureListener
 
     private BlueToothDataValuesChangedListener mBlueToothDataValuesChangedListener;
 
-    public void setBlueToothDataValuesChangedListener(BlueToothDataValuesChangedListener listener) {
-        mBlueToothDataValuesChangedListener = listener;
+//    public void setBlueToothDataValuesChangedListener(BlueToothDataValuesChangedListener listener) {
+//        mBlueToothDataValuesChangedListener = listener;
+//    }
+    public void registerBlueToothDataValuesChangedListener(BlueToothDataValuesChangedListener listener){
+        mBlueToothDataValuesChangedListeners.add(listener);
+    }
+    public void unRegisterBlueToothDataValuesChangedListener(BlueToothDataValuesChangedListener listener){
+        mBlueToothDataValuesChangedListeners.remove(listener);
     }
 
 
