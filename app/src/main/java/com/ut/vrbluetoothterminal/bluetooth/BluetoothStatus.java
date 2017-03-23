@@ -25,4 +25,5 @@ public interface BluetoothStatus {
     int STATE_SEND_NOT_READY_AND_NOTIFY_READY = -111;
     int STATE_GET_NOTIFY_DATA = 666;
 
+
 }

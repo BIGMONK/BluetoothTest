@@ -10,7 +10,9 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.util.Log;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,11 +26,6 @@ public class BlueToothLeManager extends Thread implements
         BluetoothStatus,
         BluetoothLeTool.BluetoothLeDiscoveredListener,
         BluetoothLeTool.BluetoothLeStatusListener {
-
-    @Override
-    public void onBlueToothConnectState(String add, int state) {
-        mBlueToothConnectStateListener.onBlueToothConnectState(add, state);
-    }
 
 
     public interface BlueToothConnectStateChangedListener {
@@ -71,11 +68,14 @@ public class BlueToothLeManager extends Thread implements
 
     Handler handler;
 
-    public void initBlueToothInfo(HashMap<String, BleDeviceBean> mDeviceMap) {
+    public void initBlueToothInfo(@NonNull HashMap<String, BleDeviceBean> mDeviceMap) {
+        Log.d(TAG, "initBlueToothInfo");
         this.devicesMap = mDeviceMap;
-
-        if (mBluetoothTool == null)
+        if (mBluetoothTool == null) {
             mBluetoothTool = new BluetoothLeTool(mDeviceMap);
+        } else {
+            mBluetoothTool.updateBluetoothLeTool(mDeviceMap);
+        }
 
 
         if (!mBluetoothTool.initialize()) {
@@ -133,16 +133,22 @@ public class BlueToothLeManager extends Thread implements
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    for (String add : mBluetoothTool.getAllConnectionStateMap().keySet()) {
-                        if (mBluetoothTool.getAllConnectionStateMap().get(add) == BluetoothStatus.STATE_SCAN_TIMEOUT) {
-                            mBlueToothConnectStateListener.onBlueToothConnectState(add, BluetoothLeTool.STATE_SCAN_TIMEOUT);
-                            mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                    if (mBluetoothTool.getAllConnectionState() == BluetoothStatus.STATE_DISCONNECTED) {
+                        for (String add : mBluetoothTool.getAllConnectionStateMap().keySet()) {
+                            if (mBluetoothTool.getAllConnectionStateMap().get(add)==BluetoothStatus.STATE_SCAN_TIMEOUT) {
+                                devicesMap.get(add).setState(BluetoothStatus.STATE_SCAN_TIMEOUT);
+                                mBlueToothConnectStateListener.onBlueToothConnectState(add, BluetoothStatus.STATE_SCAN_TIMEOUT);
+                            }
                         }
+//                        handler.postDelayed(this,10000);
+                    } else if (mBluetoothTool.getAllConnectionState() == BluetoothStatus.STATE_CONNECTED) {
+                        mBluetoothAdapter.stopLeScan(mLeScanCallback);
                     }
                 }
             }, 10000);
             for (String add : mBluetoothTool.getAllConnectionStateMap().keySet()) {
-                mBlueToothConnectStateListener.onBlueToothConnectState(add, BluetoothLeTool.STATE_SCANING);
+                devicesMap.get(add).setState(BluetoothStatus.STATE_SCANING);
+                mBlueToothConnectStateListener.onBlueToothConnectState(add, BluetoothStatus.STATE_SCANING);
             }
 
             mBluetoothAdapter.startLeScan(mLeScanCallback);
@@ -157,11 +163,15 @@ public class BlueToothLeManager extends Thread implements
                 public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
                     if (!mLeDevices.contains(device)) {
                         mLeDevices.add(device);
-                        Log.d(TAG, "BlueToothLeManager onLeScan device=" + device.getAddress() + "   " + device.getName());
+                        Log.d(TAG, "BlueToothLeManager onLeScan device="
+                                + device.getAddress() + "   " + device.getName());
                     }
                     final String deviceName = device.getName();
                     final String deviceAdd = device.getAddress();
-                    if (devicesMap != null && devicesMap.containsKey(deviceAdd)) {
+                    //TODO 需要判断设备连接状态
+                    if (devicesMap != null && devicesMap.containsKey(deviceAdd) &&
+                            (devicesMap.get(deviceAdd).getState() == BluetoothStatus.STATE_DISCONNECTED
+                                    || devicesMap.get(deviceAdd).getState() == BluetoothStatus.STATE_SCANING)) {
                         Log.d(TAG + "蓝牙设备findByAdd：", deviceName + "  " + deviceAdd);
                         connectDevice(device.getAddress());
                     }
@@ -187,7 +197,7 @@ public class BlueToothLeManager extends Thread implements
 
     public boolean reConnectDevice(String add) {
 
-        if (mBluetoothTool != null && add != null) {
+        if (mBluetoothTool != null && add != null && devicesMap.containsKey(add)) {
             final boolean result = mBluetoothTool.connect(add);
             Log.i(TAG, "reConnectDevice result=" + result);
             return result;
@@ -202,7 +212,7 @@ public class BlueToothLeManager extends Thread implements
     }
 
     public void sendData(String add, byte[] value) {
-        if (mBluetoothTool.getAllConnectionStateMap().get(add) == BluetoothLeTool.STATE_CONNECTED) {
+        if (mBluetoothTool.getAllConnectionStateMap().get(add) == BluetoothStatus.STATE_CONNECTED) {
             if (mSendBGC.get(add) != null) {
                 mSendBGC.get(add).setValue(value);
             } else {
@@ -214,7 +224,7 @@ public class BlueToothLeManager extends Thread implements
     }
 
     public void sendData(String add, String value) {
-        if (mBluetoothTool.getAllConnectionStateMap().get(add) == BluetoothLeTool.STATE_CONNECTED) {
+        if (mBluetoothTool.getAllConnectionStateMap().get(add) == BluetoothStatus.STATE_CONNECTED) {
             if (mSendBGC.get(add) != null) {
                 mSendBGC.get(add).setValue(value);
             } else {
@@ -233,13 +243,28 @@ public class BlueToothLeManager extends Thread implements
 
     }
 
+    long lastTime, currentTime;
+
     public void onDataAvailable(String add, byte[] value) {
 
         if (mBluetoothAdapter.isDiscovering()) {
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
             handler.removeCallbacks(mRunnable);
         }
-        mDataValuesChangedListener.onDataValuesChanged(add, value);
+        if (mDataValuesChangedListener != null) {
+            //TODO 限制心率计更新频率
+            if (devicesMap.get(add).getType() == SampleGattAttributes.HRM) {
+                currentTime = System.currentTimeMillis();
+                if (currentTime - lastTime < 2000) {
+                    return;
+                } else {
+                    mDataValuesChangedListener.onDataValuesChanged(add, value);
+                    lastTime = currentTime;
+                }
+            } else {
+                mDataValuesChangedListener.onDataValuesChanged(add, value);
+            }
+        }
 
     }
 
@@ -312,11 +337,19 @@ public class BlueToothLeManager extends Thread implements
                 }
             }
 
+            devicesMap.get(add).setState(send + notify);
             mBlueToothConnectStateListener.onBlueToothConnectState(bleDevice.getMac(), send + notify);
-
         }
 
     }
 
+    @Override
+    public void onBlueToothConnectState(String add, int state) {
+        BleDeviceBean deviceBean = devicesMap.get(add);
+        if (deviceBean != null) {
+            devicesMap.get(add).setState(state);
+            mBlueToothConnectStateListener.onBlueToothConnectState(add, state);
+        }
+    }
 
 }

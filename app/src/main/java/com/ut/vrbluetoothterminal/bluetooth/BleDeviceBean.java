@@ -1,19 +1,20 @@
 package com.ut.vrbluetoothterminal.bluetooth;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
  * Created by djf on 2017/3/17.
  */
 
-public class BleDeviceBean {
+public class BleDeviceBean implements Serializable {
     private String name;
     private String mac;
     private int type;//1  手环   2  主控板   3 计步器   4  三角心率计
     private UUID serviceUUID;
     private UUID notifyUUID;
     private UUID sendUUID;
-    private UUID configUUID;
+    private UUID configUUID = SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG;
     private byte[] values;
     private int state;
 
@@ -39,6 +40,31 @@ public class BleDeviceBean {
     public void setValues(byte[] values) {
         this.values = values;
     }
+
+//    //1  手环   2  主控板   3 计步器   4  三角心率计
+    public BleDeviceBean(String name, String mac, int type) {
+        this.name = name;
+        this.mac = mac;
+        this.type = type;
+        if (type == SampleGattAttributes.HAND_BAND) {  //手环
+            this.serviceUUID = SampleGattAttributes.HAND_BAND_SERVICE_UUID;
+            this.notifyUUID = SampleGattAttributes.HAND_BAND_RECEIVE_UUID;
+            this.sendUUID = SampleGattAttributes.HAND_BAND_SEND_UUID;
+        } else if (type == SampleGattAttributes.MAINBOARD) {//主板
+            this.serviceUUID = SampleGattAttributes.MAINBOARD_SERVICE_UUID;
+            this.notifyUUID = SampleGattAttributes.MAINBOARD_RECEIVE_UUID;
+            this.sendUUID = SampleGattAttributes.MAINBOARD_SEND_UUID;
+        } else if (type == SampleGattAttributes.STEPER) {//计步器
+            this.serviceUUID = SampleGattAttributes.STEPER_SERVICE_UUID;
+            this.notifyUUID = SampleGattAttributes.STEPER_RECEIVE_UUID;
+            this.sendUUID = SampleGattAttributes.STEPER_SEND_UUID;
+        } else if (type == SampleGattAttributes.HRM) {//心率计
+            this.serviceUUID = SampleGattAttributes.HRM_SERVICE_UUID;
+            this.notifyUUID = SampleGattAttributes.HRM_RECEIVE_UUID;
+            this.sendUUID = SampleGattAttributes.HRM_SEND_UUID;
+        }
+    }
+
 
     public BleDeviceBean(String name, String mac, int type, UUID serviceUUID, UUID notifyUUID, UUID sendUUID, UUID configUUID) {
         this.name = name;

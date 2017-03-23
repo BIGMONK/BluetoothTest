@@ -14,6 +14,7 @@ import android.util.Log;
 
 import com.ut.vrbluetoothterminal.utils.UIUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,12 +22,12 @@ import java.util.Map;
 /**
  * Created by black on 2016/4/12.
  */
-public class BluetoothLeTool {
+public class BluetoothLeTool implements BluetoothStatus {
 
     private final static String TAG = BluetoothLeTool.class.getSimpleName();
 
     public interface BluetoothLeDataListener {
-        void onDataAvailable(String add,byte[] value);
+        void onDataAvailable(String add, byte[] value);
     }
 
     public interface BluetoothLeDiscoveredListener {
@@ -34,16 +35,39 @@ public class BluetoothLeTool {
     }
 
     public interface BluetoothLeStatusListener {
-        void onBlueToothConnectState(String add,int state);
+        void onBlueToothConnectState(String add, int state);
     }
 
     public BluetoothLeTool(Map<String, BleDeviceBean> mDeviceMap) {
-        mBluetoothDeviceAddressMap = new HashMap<>();
+        Log.d(TAG, "BluetoothLeTool");
+
+        mBleAddressList = new ArrayList<>();
         mBluetoothGattMap = new HashMap<>();
         mConnectionStateMap = new HashMap<>();
         for (String address : mDeviceMap.keySet()) {
-            mConnectionStateMap.put(address, BluetoothStatus.STATE_DISCONNECTED);
+            mConnectionStateMap.put(address, STATE_SCAN_TIMEOUT);
+            mBleAddressList.add(address);
         }
+    }
+
+    public void updateBluetoothLeTool(Map<String, BleDeviceBean> mDeviceMap) {
+        Log.d(TAG, "updateBluetoothLeTool");
+        //移除不用的ble
+        for (int i = 0; i < this.mBleAddressList.size(); i++) {
+            if (!mDeviceMap.containsKey(this.mBleAddressList.get(i))) {
+                mBluetoothGattMap.remove(this.mBleAddressList.get(i));
+                mConnectionStateMap.remove(this.mBleAddressList.get(i));
+            }
+        }
+        //增加新的ble
+        mBleAddressList.clear();
+        for (String address : mDeviceMap.keySet()) {
+            mBleAddressList.add(address);
+            if (!mConnectionStateMap.containsKey(address)) {
+                mConnectionStateMap.put(address, STATE_SCAN_TIMEOUT);
+            }
+        }
+
     }
 
     private BluetoothLeDataListener mBluetoothLeDataListener;
@@ -51,33 +75,37 @@ public class BluetoothLeTool {
     private BluetoothLeStatusListener mBluetoothLeStatusListener;
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
-    private HashMap<String, BluetoothGatt> mBluetoothDeviceAddressMap;
+
+    private ArrayList<String> mBleAddressList;
+
+    /**
+     * 蓝牙设备  地址 BluetoothGatt
+     */
     private HashMap<String, BluetoothGatt> mBluetoothGattMap;
+    /**
+     * 蓝牙设备 地址  状态
+     */
     private HashMap<String, Integer> mConnectionStateMap;
 
     public HashMap<String, Integer> getAllConnectionStateMap() {
         return mConnectionStateMap;
     }
 
-    public int getAllConnectionState(){
-        for (String add:mConnectionStateMap.keySet()             ) {
-            if (mConnectionStateMap.get(add)==0){}
+    /**
+     * 获取蓝牙设备连接状态
+     *
+     * @return
+     */
+    public int getAllConnectionState() {
+        for (String add : mConnectionStateMap.keySet()) {
+            if (mConnectionStateMap.get(add) != STATE_CONNECTED) {
+                return STATE_DISCONNECTED;
+            }
         }
 
-        return 0;
+        return STATE_CONNECTED;
     }
 
-    public void setmConnectionState(String add, int mConnectionState) {
-        this.mConnectionStateMap.put(add, mConnectionState);
-    }
-
-    public static final int STATE_DISCONNECTED = 0;
-    public static final int STATE_CONNECTING = 1;
-    public static final int STATE_CONNECTED = 2;
-    public static final int STATE_SCANING = -1;
-    public static final int STATE_SCAN_TIMEOUT = -2;
-
-    private long mLastSendTimestamps;
     /**
      * 监听蓝牙连接状态和数据
      */
@@ -86,8 +114,7 @@ public class BluetoothLeTool {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String add = gatt.getDevice().getAddress();
             Log.i(TAG, "BluetoothGattCallback onConnectionStateChange add=" + add + "  state=" + newState);
-            setmConnectionState(add, newState);
-            mBluetoothLeStatusListener.onBlueToothConnectState(add,newState);
+            mConnectionStateMap.put(add, newState);
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.i(TAG, "Connected to GATT server.");
@@ -96,8 +123,9 @@ public class BluetoothLeTool {
                         mBluetoothGattMap.get(add).discoverServices());
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.i(TAG, "Disconnected from GATT server.");
+                mBluetoothGattMap.get(add).close();
             }
-
+            mBluetoothLeStatusListener.onBlueToothConnectState(add, newState);
         }
 
         @Override
@@ -131,14 +159,14 @@ public class BluetoothLeTool {
 
         }
 
+
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-
-
             final byte[] data = characteristic.getValue();
-            if (mBluetoothLeDataListener != null) {
-                mBluetoothLeDataListener.onDataAvailable(gatt.getDevice().getAddress(),data);
+            String add = gatt.getDevice().getAddress();
+            if (mBluetoothLeDataListener != null && mBleAddressList.contains(add)) {
+                mBluetoothLeDataListener.onDataAvailable(add, data);
             }
 
         }
@@ -148,7 +176,7 @@ public class BluetoothLeTool {
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
 
-                Log.d(TAG,gatt.getDevice().getAddress()+ "onCharacteristicWrite SUCCESS  ");
+                Log.d(TAG, gatt.getDevice().getAddress() + "onCharacteristicWrite SUCCESS  ");
             } else {
                 Log.d(TAG, "onCharacteristicWrite ERR    ");
             }
@@ -202,11 +230,11 @@ public class BluetoothLeTool {
         }
 
         // Previously connected device.  Try to reconnect.
-        if (mBluetoothDeviceAddressMap.containsKey(address) && mBluetoothGattMap.containsKey(address)) {
-            Log.i(TAG, "Trying to use an existing mBluetoothGatt for connection.  "+address);
+        if (mBleAddressList.contains(address) && mBluetoothGattMap.containsKey(address)) {
+            Log.i(TAG, "Trying to use an existing mBluetoothGatt for connection.  " + address);
             if (mBluetoothGattMap.get(address).connect()) {
                 mConnectionStateMap.put(address, STATE_CONNECTING);
-                mBluetoothLeStatusListener.onBlueToothConnectState(address,STATE_CONNECTING);
+                mBluetoothLeStatusListener.onBlueToothConnectState(address, STATE_CONNECTING);
                 return true;
             } else {
                 return false;
@@ -219,13 +247,13 @@ public class BluetoothLeTool {
         }
         mBluetoothGattMap.put(address, device.connectGatt(UIUtils.getContext(), false, mGattCallback));
         Log.d(TAG, "Trying to create a new connection.");
-        mBluetoothLeStatusListener.onBlueToothConnectState(address,STATE_CONNECTING);
+        mBluetoothLeStatusListener.onBlueToothConnectState(address, STATE_CONNECTING);
         return true;
     }
 
     public void disconnect(String add) {
         if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized   "+add);
+            Log.w(TAG, "BluetoothAdapter not initialized   " + add);
             return;
         }
         mBluetoothGattMap.get(add).disconnect();
@@ -243,7 +271,7 @@ public class BluetoothLeTool {
 
     public void readCharacteristic(String add, BluetoothGattCharacteristic characteristic) {
         if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized  "+add);
+            Log.w(TAG, "BluetoothAdapter not initialized  " + add);
             return;
         }
         mBluetoothGattMap.get(add).readCharacteristic(characteristic);
@@ -251,7 +279,7 @@ public class BluetoothLeTool {
 
     public void writeCharacteristic(String add, BluetoothGattCharacteristic characteristic) {
         if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized  " +add);
+            Log.w(TAG, "BluetoothAdapter not initialized  " + add);
             return;
         }
         mBluetoothGattMap.get(add).writeCharacteristic(characteristic);
@@ -259,30 +287,30 @@ public class BluetoothLeTool {
 
     public boolean setCharacteristicNotification(String add, BluetoothGattCharacteristic characteristic, boolean enabled) {
         if (mBluetoothAdapter == null || mBluetoothGattMap.get(add) == null || characteristic == null) {
-            Log.w(TAG, "BluetoothAdapter not initialized  "+add);
+            Log.w(TAG, "BluetoothAdapter not initialized  " + add);
             return false;
         }
         if (!mBluetoothGattMap.get(add).setCharacteristicNotification(characteristic, enabled)) {
-            Log.d(TAG, "setCharacteristicNotification  false  "+add);
+            Log.d(TAG, "setCharacteristicNotification  false  " + add);
             return false;
         }
 
         BluetoothGattDescriptor descriptor = characteristic.getDescriptor((SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
 
         if (descriptor == null) {
-            Log.d(TAG, String.format("getDescriptor for notify null! "+add));
+            Log.d(TAG, String.format("getDescriptor for notify null! " + add));
             return false;
         }
 
         byte[] value = (enabled ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
 
         if (!descriptor.setValue(value)) {
-            Log.d(TAG, String.format("setValue for notify descriptor failed! "+add));
+            Log.d(TAG, String.format("setValue for notify descriptor failed! " + add));
             return false;
         }
 
         if (!mBluetoothGattMap.get(add).writeDescriptor(descriptor)) {
-            Log.d(TAG, String.format("writeDescriptor for notify failed "+add));
+            Log.d(TAG, String.format("writeDescriptor for notify failed " + add));
             return false;
         }
         return true;
