@@ -1,5 +1,7 @@
 package com.ut.vrbluetoothterminal.bluetooth;
 
+import com.ut.vrbluetoothterminal.utils.ByteUtils;
+
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -16,7 +18,7 @@ public class BleDeviceBean implements Serializable {
     private UUID sendUUID;
     private UUID configUUID = SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG;
     private byte[] values;
-    private int state;
+    private int state = 0;
 
     public int getState() {
         return state;
@@ -30,18 +32,21 @@ public class BleDeviceBean implements Serializable {
         StringBuffer sb = new StringBuffer();
         if (values != null) {
             for (int i = 0; i < values.length; i++) {
-                sb.append(values[i] + "    ");
+                sb.append(ByteUtils.int2HexString(values[i]) + "    ");
             }
         }
 
         return sb.toString();
+        //        if (values != null)
+        //            return ByteUtils.getHexString(values);
+        //        else return "null";
     }
 
     public void setValues(byte[] values) {
         this.values = values;
     }
 
-//    //1  手环   2  主控板   3 计步器   4  三角心率计
+    //    //1  手环   2  主控板   3 计步器   4  三角心率计
     public BleDeviceBean(String name, String mac, int type) {
         this.name = name;
         this.mac = mac;

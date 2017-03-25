@@ -40,7 +40,10 @@ public class InputSystemManager
 
     public static InputSystemManager getInstance() {
         if (instance == null) {
-            instance = new InputSystemManager();
+            synchronized (InputSystemManager.class) {
+                if (instance == null)
+                    instance = new InputSystemManager();
+            }
         }
         return instance;
     }
@@ -82,7 +85,7 @@ public class InputSystemManager
 
 
     //注意，此处的Context一定是Activity的context
-    public boolean initWithContext(Context context,@NonNull HashMap<String, BleDeviceBean> devices) {
+    public boolean initWithContext(Context context, @NonNull HashMap<String, BleDeviceBean> devices) {
         this.mContext = context;
         if (devicesMap != null) {
             devicesMap.clear();

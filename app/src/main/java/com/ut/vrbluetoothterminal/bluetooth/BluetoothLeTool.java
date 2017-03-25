@@ -230,16 +230,16 @@ public class BluetoothLeTool implements BluetoothStatus {
         }
 
         // Previously connected device.  Try to reconnect.
-        if (mBleAddressList.contains(address) && mBluetoothGattMap.containsKey(address)) {
-            Log.i(TAG, "Trying to use an existing mBluetoothGatt for connection.  " + address);
-            if (mBluetoothGattMap.get(address).connect()) {
-                mConnectionStateMap.put(address, STATE_CONNECTING);
-                mBluetoothLeStatusListener.onBlueToothConnectState(address, STATE_CONNECTING);
-                return true;
-            } else {
-                return false;
-            }
-        }
+//        if (mBleAddressList.contains(address) && mBluetoothGattMap.containsKey(address)) {
+//            Log.i(TAG, "Trying to use an existing mBluetoothGatt for connection.  " + address);
+//            if (mBluetoothGattMap.get(address).connect()) {
+//                mConnectionStateMap.put(address, STATE_CONNECTING);
+//                mBluetoothLeStatusListener.onBlueToothConnectState(address, STATE_CONNECTING);
+//                return true;
+//            } else {
+//                return false;
+//            }
+//        }
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         if (device == null) {
             Log.w(TAG, "Device not found.  Unable to connect.");

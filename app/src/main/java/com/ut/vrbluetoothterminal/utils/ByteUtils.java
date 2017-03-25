@@ -9,8 +9,9 @@ import java.util.Arrays;
  */
 public class ByteUtils {
 
-    private static final char[] CHARS = new char[] { '0', '1', '2', '3', '4',
-            '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    private static final char[] CHARS = new char[]{'0', '1', '2', '3', '4',
+            '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
     /**
      * 把字节数组转换成十六进制字符串，两个字符表示一个字节。
      *
@@ -20,16 +21,13 @@ public class ByteUtils {
     public static String getHexString(byte[] b) {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < b.length; i++) {
-            String hex = Integer.toHexString(b[ i] & 0xFF);
-            if (hex.length() == 1) {
-                builder.append("0");
-            }
-            builder.append(hex);
+            builder.append(int2HexString(b[i])+"  ");
         }
         String result = builder.toString();
-        result = result.toUpperCase();
+        //        result = result.toUpperCase();
         return result;
     }
+
 
     /**
      * 把十六进制字符串还原成，字符串中每两个字符表示一个字节
@@ -48,15 +46,11 @@ public class ByteUtils {
         for (int i = 0; i < length; i++) {
             int pos = i * 2;
             byte b = (byte) (charToByte(hexChars[pos]) << 4 | charToByte(hexChars[pos + 1]));
-            if(b < 0){
-                d[i] = (byte) (128+b);
-            }else{
+            if (b < 0) {
+                d[i] = (byte) (128 + b);
+            } else {
                 d[i] = b;
             }
-//            d[i] = (byte) (charToByte(hexChars[pos]) << 4 | charToByte(hexChars[pos + 1]));
-//            if(d[i]<0){
-//                d[i] = (byte) (256+d[i]);
-//            }
         }
         return d;
     }
@@ -70,6 +64,16 @@ public class ByteUtils {
         return Byte.MIN_VALUE;
     }
 
+    public static String int2HexString(int i) {
+        String hex = Integer.toHexString(i & 0xFF);
+        hex = hex.toUpperCase();
+        if (hex.length() == 1) {
+            hex = 0 + hex;
+        }
+        return  hex = "0x" + hex;
+    }
+
+
     public static void main(String[] args) {
         byte[] bs = new byte[]{1, 2, 3, 4, -1};
         String str = getHexString(bs);
@@ -81,7 +85,7 @@ public class ByteUtils {
         System.out.println();
         byte[] test = new byte[1];
         test[0] = 15;
-        System.out.println("测试:"+getHexString(test));
-        System.out.println("测试:"+Arrays.toString(getByteArray(getHexString(test))));
+        System.out.println("测试:" + getHexString(test));
+        System.out.println("测试:" + Arrays.toString(getByteArray(getHexString(test))));
     }
 }

@@ -142,7 +142,7 @@ public class BlueToothLeManager extends Thread implements
                         }
 //                        handler.postDelayed(this,10000);
                     } else if (mBluetoothTool.getAllConnectionState() == BluetoothStatus.STATE_CONNECTED) {
-                        mBluetoothAdapter.stopLeScan(mLeScanCallback);
+//                        mBluetoothAdapter.stopLeScan(mLeScanCallback);
                     }
                 }
             }, 10000);
