@@ -49,17 +49,17 @@ public class BleDeviceAdapter extends RecyclerView.Adapter<BleDeviceAdapterHolde
         holder.mac.setText("mac:"+datas.get(list.get(position).getMac()).getMac());
         switch (datas.get(list.get(position).getMac()).getType()) {
             case 1:
-                holder.type.setText("手环");                ;
+                holder.type.setText("手环");
                 break;
             case 2:
-                holder.type.setText("主控板");                ;
+                holder.type.setText("主控板");
                 break;
             case 3:
-                holder.type.setText("计步器");               ;
+                holder.type.setText("计步器");
 
                 break;
             case 4:
-                holder.type.setText("三角心率计");               ;
+                holder.type.setText("三角心率计");
 
                 break;
         }

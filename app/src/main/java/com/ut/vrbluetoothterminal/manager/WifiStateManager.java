@@ -32,10 +32,6 @@ public class WifiStateManager extends BroadcastReceiver {
     private boolean getActiveNetwork(Context context){
         ConnectivityManager mConnMgr = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = mConnMgr.getActiveNetworkInfo();  // 获取活动网络连接信息
-        if(networkInfo != null && networkInfo.isAvailable()){
-            return true;
-        }
-        else
-            return false;
+        return networkInfo != null && networkInfo.isAvailable();
     }
 }

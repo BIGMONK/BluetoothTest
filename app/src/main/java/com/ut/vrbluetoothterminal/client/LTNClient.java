@@ -29,9 +29,9 @@ public class LTNClient implements ILTNClient {
 		LTNClientStatusDisconnected,
 		LTNClientStatusConnecting,
 		LTNClientStatusConnected,
-	};
+	}
 
-    private String mHost;
+	private String mHost;
     private short mPort;
     private EventLoopGroup mWorkerGroup;
     private ChannelFuture mChannelFuture;

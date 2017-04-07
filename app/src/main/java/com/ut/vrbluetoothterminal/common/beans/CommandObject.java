@@ -228,7 +228,7 @@ public final class CommandObject {
       static final com.google.protobuf.MapEntry<
           String, String> defaultEntry =
               com.google.protobuf.MapEntry
-              .<String, String>newDefaultInstance(
+              .newDefaultInstance(
                   com.ut.vrbluetoothterminal.common.beans.CommandObject.internal_static_MessageObject_ParamsEntry_descriptor,
                   com.google.protobuf.WireFormat.FieldType.STRING,
                   "",
@@ -725,7 +725,7 @@ public final class CommandObject {
       }
       private com.google.protobuf.MapField<String, String>
       internalGetMutableParams() {
-        onChanged();;
+        onChanged();
         if (params_ == null) {
           params_ = com.google.protobuf.MapField.newMapField(
               ParamsDefaultEntryHolder.defaultEntry);

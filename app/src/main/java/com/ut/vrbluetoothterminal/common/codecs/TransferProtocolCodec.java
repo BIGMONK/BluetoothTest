@@ -69,7 +69,7 @@ public class TransferProtocolCodec extends MessageToMessageCodec<ByteBuf, Packag
     	proto.setReversed((byte)(trData & LOW_HALF_BYTE_MASK));
     	
     	//Read checksum
-    	proto.setChecksum((byte)byteBuf.readByte());
+    	proto.setChecksum(byteBuf.readByte());
     	proto.setLength((int)byteBuf.readShort());
     	
     	//Read protobuf

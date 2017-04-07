@@ -158,13 +158,13 @@ public class MainActivity extends AppCompatActivity implements
                     int i = 0;
                     while (i < bs.length) {
                         if (i + 1 == bs.length) {
-                            write4Bytes(new byte[]{(byte) (sendCount / 256), (byte) (sendCount % 256), (byte) bs[i], 0});
+                            write4Bytes(new byte[]{(byte) (sendCount / 256), (byte) (sendCount % 256), bs[i], 0});
                             Log.d(TAG, "LLLLLLL  data=" + (byte) (sendCount / 256) + "  "
-                                    + (byte) (sendCount % 256) + "  " + (byte) bs[i] + "  " + 0);
+                                    + (byte) (sendCount % 256) + "  " + bs[i] + "  " + 0);
                         } else {
-                            write4Bytes(new byte[]{(byte) (sendCount / 256), (byte) (sendCount % 256), (byte) bs[i], (byte) bs[i + 1]});
+                            write4Bytes(new byte[]{(byte) (sendCount / 256), (byte) (sendCount % 256), bs[i], bs[i + 1]});
                             Log.d(TAG, "LLLLLLL  data=" + (byte) (sendCount / 256) + "  "
-                                    + (byte) (sendCount % 256) + "  " + (byte) bs[i] + "  " + (byte) bs[i + 1]);
+                                    + (byte) (sendCount % 256) + "  " + bs[i] + "  " + bs[i + 1]);
                         }
                         i++;
                         i++;
